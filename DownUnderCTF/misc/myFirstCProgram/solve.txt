@@ -1,0 +1,2 @@
+The entire program is gibberish, so you just have to trace through and make educated guesses on what the pseudo-code would do
+Final result is: DUCTF{I_D0nT_Th1nk_th15_1s_R34L_C}

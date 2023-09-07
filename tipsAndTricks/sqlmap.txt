@@ -1,0 +1,18 @@
+SQLMap is a command line tool for interacting with databases and getting information about them.
+`sqlmap`
+
+-r         >can be used to access a website with a GET request you have saved to a .txt file on your computer.
+            When sending a GET request with the browser, you can intercept this request with BurpSuite and save the request.
+
+--dbs      >can be used to scan for available databases at the request. Cannot use this with SQLite because it can't have
+            multiple databases.
+
+-D         >can be used to select a specific database which you know exists at the request
+
+--tables   >can be used to scan for available tables in the database specified. Must be using the `-D` command with this or
+            be targeting an SQLite database. Similar to the `dbs` command
+
+-T         >can be used to select a specific table in the database, which you know exists. Must be used with SQLite or `-D`
+
+--dump     >can be used to print a table to the console. Must be used with a database (either `-D` or SQLite) and a table (`-T`)
+

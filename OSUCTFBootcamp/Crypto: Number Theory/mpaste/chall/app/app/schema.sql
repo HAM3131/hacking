@@ -1,0 +1,13 @@
+DROP TABLE IF EXISTS paste;
+CREATE TABLE paste (
+    id TEXT NOT NULL,
+    body TEXT NOT NULL,
+    PRIMARY KEY(id)
+);
+
+DROP TABLE IF EXISTS id_gen;
+CREATE TABLE id_gen (
+    p TEXT NOT NULL,
+    g TEXT NOT NULL,
+    e TEXT NOT NULL
+);

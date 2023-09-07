@@ -1,0 +1,4 @@
+We solved this challenge by using the ability to know how long the program takes to run.
+We extract information about each character in the flag by abusing the `sleep()` function.
+
+RESULT: osuctf{w0w_ju5t_am4z1ng}

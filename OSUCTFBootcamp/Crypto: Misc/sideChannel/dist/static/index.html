@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Side Channel</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css" integrity="sha256-WLKGWSIJYerRN8tbNGtXWVYnUM5wMJTXD8eG4NtGcDM=" crossorigin="anonymous">
+    </head>
+    <body>
+        <section class="section">
+            <div class="container">
+                <h1 class="title">Side Channel</h1>
+                <p class="subtitle">
+                I will literally give you the flag, but you have <a href="/dist.zip">no way</a> to exfiltrate it.
+                </p>
+
+                <div class="field">
+                    <div class="control">
+                        <textarea class="textarea is-family-monospace" id="code" rows="8">int main(int argc, char *argv[])
+{
+    char* flag = argv[1];
+    // Do stuff
+    return 0;
+}
+</textarea>
+                    </div>
+                </div>
+
+                <div class="field">
+                  <div class="control">
+                      <button class="button is-link" onclick="run()">Run</button>
+                  </div>
+                </div>
+
+                <pre id="output" hidden></pre>
+            </div>
+        </section>
+        <script>
+async function run() {
+    output.textContent = "Loading ..."
+    output.removeAttribute("hidden");
+
+    const res = await fetch(`/run?${new URLSearchParams({ code: code.value })}`)
+    const data = await res.json()
+    output.textContent = res.status == 200 ? `Completed in ${data} sec` : data
+}
+        </script>
+    </body>
+</html>

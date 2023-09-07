@@ -1,0 +1,7 @@
+Find the modular inverse:
+There is this really function called Extended Euclidean Algorithm, which will find the greatest common denominator of two numbers.
+In and of itself, that's not very useful, but it also gives you two numbers x and y such that:
+                Ax - By = gcd(A, B)
+When used in the context of primes, if B is a prime, then (A % B)^-1, or the inverse of A mod B is x. HUUUUUGE for decryption.
+
+A program that will solve this is located at Hack/codeSkeletons/extendedGCD.py

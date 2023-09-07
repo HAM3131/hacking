@@ -1,0 +1,4 @@
+app/env/
+app/instance/
+**__pycache__
+**.env

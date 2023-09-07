@@ -1,0 +1,7 @@
+Cross Site Scripting                        https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/XSS%20Injection
+Nmap (Network Scanner)                      https://nmap.org/book/man-briefoptions.html
+SQLMap (SQL Scanner)                        
+RSA Decryptor                               https://www.dcode.fr/rsa-cipher
+Unhasher (check if known hash)              https://hashes.com/en/decrypt/hash
+
+CyberChef (miscelaneous tools - decode)     https://gchq.github.io/CyberChef/

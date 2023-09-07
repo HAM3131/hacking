@@ -1,0 +1,5 @@
+FIRST: try this website! It might be able to solve it for you!
+https://www.dcode.fr/rsa-cipher
+
+Another tool:
+RasCtfTool - This will run a lot of different attacks for you.

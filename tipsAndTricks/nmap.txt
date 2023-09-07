@@ -1,0 +1,10 @@
+NMap is a command line tool for scanning a network and getting data about it. 
+`nmap -v -A flagbin-1.pwn.osucyber.club -p 443`
+
+-v         >can be used to increase the verbosity of the response
+
+-A         >can be used to enable OS detection, version detection, script scanning, and traceroute
+
+-p         >can be used with an argument (number) to decide what port (or range of porst) to scan
+
+More options and good stuff at https://nmap.org/book/man-briefoptions.html

@@ -1,0 +1,12 @@
+WEB:
+BurpSuite                           HTTP Requests
+NMap                                Network Scanner
+SQLMap                              SQL Database Scanner
+
+
+WireShark                           Packet Inspector
+Ghidra                              Decompile executable files
+
+
+MISC:
+CyberChef
