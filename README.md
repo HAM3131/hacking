@@ -7,3 +7,4 @@ Starting in the 2023 school year, I have participated in a couple of CTF events 
 So far this year, I have participated in:
  - SekaiCTF 2023
  - DownUnderCTF 2023
+ - Hitcon CTF 2023
