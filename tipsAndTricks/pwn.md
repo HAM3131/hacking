@@ -4,6 +4,8 @@ Pwn is a categegory of challenges focused on binary exploitation: exploiting poo
 # Buffer Overflow
 
 # Format String Bug
+Most of my format string knowledge comes from this great website: https://ir0nstone.gitbook.io/notes/types/stack/format-string
+
 The format string vulnerability exists in `C/C++` when the implementation uses a function like `printf()` to print user input. Because the function includes format string functionality, a user can use format specifiers in their input to arbitrarily read or right on the host.
 ```{C++} 
 #include <stdio.h>

